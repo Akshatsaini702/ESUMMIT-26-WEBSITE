@@ -187,7 +187,7 @@ export default function RegistrationForm({ event }) {
             <div className="mb-4">
               <RulebookButton />
             </div>
-            <p className="text-white/55 text-sm mb-6">Free entry · Open to students across India</p>
+            <p className="text-white/55 text-sm mb-6">Free to attend and open to students across INDIA</p>
 
             <div className="grid sm:grid-cols-2 gap-4">
               {mainFields.map(renderField)}

@@ -7,7 +7,7 @@ export const SUMMIT = {
   dates: '28 – 29 September 2026',
   campus: 'DCRUST University Campus, Murthal (Sonepat)',
   organisers: 'E-Cell DCRUST × Incubation Center DCRUST',
-  registration: 'Free · Open to students across India',
+  registration: 'Free to attend and open to students across INDIA',
 }
 
 export const events = [
