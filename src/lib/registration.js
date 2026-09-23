@@ -83,3 +83,28 @@ export async function submitRegistration(event, fields, values, user) {
 
   return { ok: true, simulated: false }
 }
+
+// Submits an attendee-only registration (no sign-in). Writes to the separate
+// `attendees` table. Falls back to a simulated success when the backend isn't set.
+export async function submitAttendee(fields, values) {
+  const data = buildData(fields, values)
+
+  if (!supabase) {
+    await new Promise((r) => setTimeout(r, 900)) // simulate network
+    return { ok: true, simulated: true }
+  }
+
+  const row = {
+    name: String(values.name ?? '').trim(),
+    roll_no: String(values.rollNo ?? '').trim(),
+    college: String(values.college ?? '').trim(),
+    branch: String(values.branch ?? '').trim(),
+    year: String(values.year ?? '').trim(),
+    email: String(values.email ?? '').trim(),
+    data,
+  }
+
+  const { error } = await supabase.from('attendees').insert(row)
+  if (error) throw error
+  return { ok: true, simulated: false }
+}

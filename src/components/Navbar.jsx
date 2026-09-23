@@ -102,6 +102,13 @@ export default function Navbar() {
                 <span className="absolute -bottom-1 left-0 h-[2px] w-0 group-hover:w-full transition-all duration-300 bg-gradient-to-r from-gold to-champagne" />
               </button>
             ))}
+            <Link
+              to="/attend"
+              className="text-sm text-white/70 hover:text-white transition-colors relative group"
+            >
+              Attend
+              <span className="absolute -bottom-1 left-0 h-[2px] w-0 group-hover:w-full transition-all duration-300 bg-gradient-to-r from-cyan to-royal" />
+            </Link>
             <button
               onClick={getBrochure}
               className="text-sm font-semibold px-4 py-1.5 rounded-full bg-gradient-to-r from-gold to-champagne text-black hover:opacity-90 transition-opacity"
@@ -165,6 +172,7 @@ export default function Navbar() {
                 {l.label}
               </button>
             ))}
+            <button onClick={() => { setOpen(false); nav('/attend') }} className="text-left px-4 py-3 rounded-xl text-white/80 hover:bg-white/5">Attend (no sign-in)</button>
             <button onClick={getBrochure} className="text-left px-4 py-3 rounded-xl font-semibold grad-text">Brochure</button>
             {isAdmin && (
               <button onClick={() => { setOpen(false); nav('/admin') }} className="text-left px-4 py-3 rounded-xl font-semibold grad-text">Admin</button>

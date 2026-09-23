@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import Wordmark from './Wordmark'
 import { SUMMIT } from '../data/events'
 import { CONTACT } from '../config'
@@ -113,6 +114,12 @@ export default function Hero() {
         >
           View Schedule
         </button>
+        <Link
+          to="/attend"
+          className="rounded-xl px-7 py-3.5 font-semibold text-white glass hover:bg-white/10 transition-colors border border-cyan/40"
+        >
+          Attend Only — No Sign-in
+        </Link>
       </motion.div>
 
       <motion.div

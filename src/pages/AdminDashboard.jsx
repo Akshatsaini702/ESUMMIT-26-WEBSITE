@@ -23,71 +23,87 @@ function columnsOf(displays) {
 export default function AdminDashboard() {
   const { user, loading, configured, isAdmin, signInWithGoogle, signOut } = useAuth()
   const [records, setRecords] = useState([])
+  const [attendees, setAttendees] = useState([])
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState('')
-  const [selected, setSelected] = useState(null) // null = panels grid; event id or 'ALL'
+  const [selected, setSelected] = useState(null) // null = panels grid; event id | 'ALL' | 'ATTENDEES'
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (!supabase || !isAdmin) return
     setFetching(true)
-    supabase
-      .from('registrations')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) setError(error.message)
-        else setRecords(data || [])
-        setFetching(false)
-      })
+    Promise.all([
+      supabase.from('registrations').select('*').order('created_at', { ascending: false }),
+      supabase.from('attendees').select('*').order('created_at', { ascending: false }),
+    ]).then(([regs, atts]) => {
+      if (regs.error) setError(regs.error.message)
+      else setRecords(regs.data || [])
+      // Attendee table may not exist until the new SQL is run — don't hard-fail.
+      if (atts.error) console.warn('Attendees fetch:', atts.error.message)
+      else setAttendees(atts.data || [])
+      setFetching(false)
+    })
   }, [isAdmin])
 
+  const isAttendeeView = selected === 'ATTENDEES'
   const countFor = (id) => records.filter((r) => r.event_id === id).length
   const total = records.length
 
-  const selectedEvent = selected && selected !== 'ALL' ? events.find((e) => e.id === selected) : null
-  const selectedTitle = selected === 'ALL' ? 'All Registrations' : selectedEvent?.title || ''
+  const selectedEvent = selected && selected !== 'ALL' && !isAttendeeView ? events.find((e) => e.id === selected) : null
+  const selectedTitle = selected === 'ALL' ? 'All Registrations' : isAttendeeView ? 'Attendee Registrations' : selectedEvent?.title || ''
 
   // Visible records for the selected view (+ search), each carrying its DB id.
   const visible = useMemo(() => {
-    const subset = selected === 'ALL' ? records : records.filter((r) => r.event_id === selected)
     const q = query.trim().toLowerCase()
-    return subset
-      .map((r) => ({
+    let rows
+    if (isAttendeeView) {
+      rows = attendees.map((r) => ({
+        id: r.id,
+        display: { 'Registered At': fmt(r.created_at), ...(r.data || {}) },
+      }))
+    } else {
+      const subset = selected === 'ALL' ? records : records.filter((r) => r.event_id === selected)
+      rows = subset.map((r) => ({
         id: r.id,
         display:
           selected === 'ALL'
             ? { 'Registered At': fmt(r.created_at), Event: r.event_title, ...(r.data || {}) }
             : { 'Registered At': fmt(r.created_at), ...(r.data || {}) },
       }))
-      .filter((v) => !q || Object.values(v.display).some((x) => String(x).toLowerCase().includes(q)))
-  }, [records, selected, query])
+    }
+    return rows.filter((v) => !q || Object.values(v.display).some((x) => String(x).toLowerCase().includes(q)))
+  }, [records, attendees, selected, isAttendeeView, query])
 
   const columns = useMemo(() => columnsOf(visible.map((v) => v.display)), [visible])
 
   // ---- Delete actions (admin only; RLS also enforces this server-side) ----
+  const TABLE = isAttendeeView ? 'attendees' : 'registrations'
+  const setRowsAfterDelete = (idset) =>
+    isAttendeeView
+      ? setAttendees((rs) => rs.filter((r) => !idset.has(r.id)))
+      : setRecords((rs) => rs.filter((r) => !idset.has(r.id)))
+
   const deleteOne = async (id) => {
     if (!window.confirm('Delete this registration? This cannot be undone.')) return
     setBusy(true)
-    const { error } = await supabase.from('registrations').delete().eq('id', id)
+    const { error } = await supabase.from(TABLE).delete().eq('id', id)
     setBusy(false)
     if (error) return alert('Delete failed: ' + error.message)
-    setRecords((rs) => rs.filter((r) => r.id !== id))
+    setRowsAfterDelete(new Set([id]))
   }
 
   const deleteAllShown = async () => {
     const ids = visible.map((v) => v.id)
     if (!ids.length) return
-    const what = selected === 'ALL' ? `ALL ${ids.length} registrations (every event)` : `all ${ids.length} registration(s) for ${selectedTitle}`
+    const what = selected === 'ALL' ? `ALL ${ids.length} registrations (every event)` : `all ${ids.length} record(s) for ${selectedTitle}`
     if (!window.confirm(`Delete ${what}?\n\nThis permanently removes them and cannot be undone.`)) return
     if (!window.confirm('Are you absolutely sure? There is no undo.')) return
     setBusy(true)
-    const { error } = await supabase.from('registrations').delete().in('id', ids)
+    const { error } = await supabase.from(TABLE).delete().in('id', ids)
     setBusy(false)
     if (error) return alert('Delete failed: ' + error.message)
-    const idset = new Set(ids)
-    setRecords((rs) => rs.filter((r) => !idset.has(r.id)))
+    setRowsAfterDelete(new Set(ids))
   }
 
   const exportCSV = () => {
@@ -212,6 +228,34 @@ export default function AdminDashboard() {
                     </span>
                   </div>
                 </motion.button>
+
+                {/* ATTENDEES — separate list (no sign-in registrations) */}
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: (COMPETITIONS.length + 1) * 0.05 }}
+                  onClick={() => { setSelected('ATTENDEES'); setQuery('') }}
+                  className="group text-left rounded-2xl p-6 relative overflow-hidden hover:-translate-y-1 transition-transform"
+                  style={{ background: 'linear-gradient(120deg, rgba(34,211,238,0.22), rgba(34,211,238,0.06))', border: '1px solid rgba(34,211,238,0.35)' }}
+                >
+                  <div className="absolute -top-14 -right-14 w-36 h-36 rounded-full blur-3xl opacity-40 group-hover:opacity-70 transition-opacity" style={{ background: '#22d3ee' }} />
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: 'rgba(34,211,238,0.16)', color: '#22d3ee' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-5 6-5s6 1.7 6 5" /><path d="M16 5.5a3 3 0 0 1 0 5M21 20c0-2.6-1.5-4.2-3.5-4.8" /></svg>
+                    </div>
+                    <h3 className="font-display font-bold text-lg leading-snug">Attendees</h3>
+                    <p className="text-xs text-white/50 mt-0.5">Attend-only · no sign-in</p>
+                    <div className="mt-4 flex items-end justify-between">
+                      <div>
+                        <div className="font-display font-extrabold text-3xl grad-text">{attendees.length}</div>
+                        <div className="text-[11px] uppercase tracking-wider text-white/50">registrations</div>
+                      </div>
+                      <span className="text-sm font-semibold text-white/70 group-hover:text-white flex items-center gap-1">
+                        View <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                      </span>
+                    </div>
+                  </div>
+                </motion.button>
               </div>
             </>
           ) : (
@@ -248,7 +292,7 @@ export default function AdminDashboard() {
                       {fetching ? (
                         <tr><td colSpan={columns.length + 1} className="px-4 py-10 text-center text-white/50">Loading…</td></tr>
                       ) : visible.length === 0 ? (
-                        <tr><td colSpan={columns.length + 1} className="px-4 py-10 text-center text-white/50">No registrations yet for this event.</td></tr>
+                        <tr><td colSpan={columns.length + 1} className="px-4 py-10 text-center text-white/50">{isAttendeeView ? 'No attendee registrations yet.' : 'No registrations yet for this event.'}</td></tr>
                       ) : (
                         visible.map((v) => (
                           <tr key={v.id} className="hover:bg-white/5">

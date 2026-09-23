@@ -18,8 +18,8 @@ export const events = [
     type: 'competition',
     day: 'Day 1',
     date: '28 Sep 2026',
-    time: '11:30 AM – 1:30 PM',
-    venue: 'To be announced',
+    time: '11:00 AM – 12:30 PM',
+    venue: 'Auditorium Seminar Hall',
     icon: 'megaphone',
     accent: '#ff7a1a',
     prizes: ['₹3,100', '₹2,100', '₹1,100'],
@@ -55,8 +55,8 @@ export const events = [
     type: 'competition',
     day: 'Day 1',
     date: '28 Sep 2026',
-    time: '11:30 AM – 4:30 PM',
-    venue: 'To be announced',
+    time: '3:00 PM – 5:00 PM',
+    venue: 'TPO Seminar Hall',
     icon: 'handshake',
     accent: '#a855f7',
     prizes: ['₹3,100', '₹2,100', '₹1,100'],
@@ -87,8 +87,8 @@ export const events = [
     type: 'competition',
     day: 'Day 2',
     date: '29 Sep 2026',
-    time: '10:00 AM – 1:00 PM',
-    venue: 'To be announced',
+    time: '9:30 AM – 12:30 PM',
+    venue: 'Auditorium Seminar Hall',
     icon: 'rocket',
     accent: '#ff2fa4',
     prizes: ['₹3,100', '₹2,100', '₹1,100'],
@@ -135,7 +135,7 @@ export const events = [
     day: 'Day 2',
     date: '29 Sep 2026',
     time: '9:00 AM – 3:00 PM',
-    venue: 'To be announced',
+    venue: 'TPO Seminar Hall · Online event (briefing at 9:00 AM)',
     icon: 'chart',
     accent: '#22d3ee',
     prizes: ['₹3,100', '₹2,100', '₹1,100'],
@@ -166,8 +166,8 @@ export const events = [
     type: 'competition',
     day: 'Day 2',
     date: '29 Sep 2026',
-    time: '10:30 AM – 1:00 PM',
-    venue: 'To be announced',
+    time: '3:00 PM – 4:30 PM',
+    venue: 'Auditorium Seminar Hall',
     icon: 'scale',
     accent: '#22d3ee',
     prizes: ['₹3,100', '₹2,100', '₹1,100'],
@@ -201,8 +201,8 @@ export const events = [
     type: 'info',
     day: 'Day 1 & Day 2',
     date: '28–29 Sep 2026',
-    time: 'Day 1 · 11:30 AM – 1:30 PM · Day 2 · 10:30 AM – 12:30 PM',
-    venue: 'To be announced',
+    time: 'Day 1 · 12:30 – 2:00 PM · Day 2 · 12:30 – 2:00 PM',
+    venue: 'Main Auditorium',
     icon: 'mic',
     accent: '#a855f7',
     short:
@@ -221,8 +221,8 @@ export const events = [
     type: 'info',
     day: 'Day 1',
     date: '28 Sep 2026',
-    time: '4:30 PM – 6:00 PM',
-    venue: 'To be announced',
+    time: '5:00 PM onwards',
+    venue: 'Main Auditorium',
     icon: 'music',
     accent: '#ff7a1a',
     short:
@@ -240,8 +240,8 @@ export const events = [
     type: 'info',
     day: 'Day 2',
     date: '29 Sep 2026',
-    time: '3:00 PM – 4:30 PM',
-    venue: 'To be announced',
+    time: '4:30 PM onwards',
+    venue: 'Main Auditorium',
     icon: 'trophy',
     accent: '#ff2fa4',
     short:
@@ -302,21 +302,33 @@ events.forEach((e) => {
 
 export const getEvent = (id) => events.find((e) => e.id === id)
 
-// Tentative programme schedule (from the official brochure).
+// Attendee-only registration (no sign-in) — for people who just want to attend
+// panels, the cultural evening, etc. Kept separate from the competition forms.
+export const attendeeFields = [
+  { name: 'name', label: 'Full Name', type: 'text', placeholder: 'e.g. Aarav Sharma' },
+  { name: 'rollNo', label: 'Roll Number', type: 'text', placeholder: 'e.g. 21001234' },
+  { ...COLLEGE },
+  { ...BRANCH },
+  { ...YEAR },
+  { name: 'email', label: 'Email Address', type: 'email', placeholder: 'you@example.com', full: true },
+]
+
+// Final programme schedule — venues & timings (official).
 export const schedule = {
   'Day 1 · 28 Sep 2026': [
-    { time: '09:00 – 11:30 AM', activity: 'Inauguration / Opening Ceremony' },
-    { time: '11:30 AM – 1:30 PM', activity: 'Advertising Competition' },
-    { time: '11:30 AM – 1:30 PM', activity: 'Panel Discussion I' },
-    { time: '11:30 AM – 4:30 PM', activity: 'Startup Supply' },
-    { time: '04:30 – 6:00 PM', activity: 'Cultural Evening' },
+    { time: '10:00 AM', activity: 'Inauguration Ceremony', venue: 'Main Auditorium' },
+    { time: '11:00 AM – 12:30 PM', activity: 'Advertising Competition', venue: 'Auditorium Seminar Hall' },
+    { time: '12:30 – 2:00 PM', activity: 'Panel Discussion I', venue: 'Main Auditorium' },
+    { time: '2:00 – 3:00 PM', activity: 'Executive Lunch', venue: 'Venue to be updated' },
+    { time: '3:00 – 5:00 PM', activity: 'Startup Supply', venue: 'TPO Seminar Hall' },
+    { time: '5:00 PM onwards', activity: 'Cultural Evening', venue: 'Main Auditorium' },
   ],
   'Day 2 · 29 Sep 2026': [
-    { time: '09:30 – 10:00 AM', activity: 'Reporting & Morning Briefing' },
-    { time: '10:00 AM – 1:00 PM', activity: 'Pitching Competition' },
-    { time: '09:00 AM – 3:00 PM', activity: 'Corporate Stocks (parallel)' },
-    { time: '10:30 AM – 12:30 PM', activity: 'Panel Discussion II' },
-    { time: '10:30 AM – 1:00 PM', activity: 'Turn the COAT' },
-    { time: '03:00 – 4:30 PM', activity: 'Prize Distribution & Closing' },
+    { time: '9:00 AM', activity: 'Corporate Stocks — Briefing (online event)', venue: 'TPO Seminar Hall' },
+    { time: '9:30 AM – 12:30 PM', activity: 'Pitching Competition', venue: 'Auditorium Seminar Hall' },
+    { time: '12:30 – 2:00 PM', activity: 'Panel Discussion II', venue: 'Main Auditorium' },
+    { time: '2:00 – 3:00 PM', activity: 'Executive Lunch', venue: 'Venue to be updated' },
+    { time: '3:00 – 4:30 PM', activity: 'Turn the COAT', venue: 'Auditorium Seminar Hall' },
+    { time: '4:30 PM onwards', activity: 'Prize Distribution Ceremony', venue: 'Main Auditorium' },
   ],
 }

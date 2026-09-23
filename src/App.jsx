@@ -9,6 +9,7 @@ import RouteLoader from './components/RouteLoader'
 import Home from './pages/Home'
 import EventDetail from './pages/EventDetail'
 import AdminDashboard from './pages/AdminDashboard'
+import AttendeeRegister from './pages/AttendeeRegister'
 import NotFound from './pages/NotFound'
 
 const Page = ({ children }) => (
@@ -81,6 +82,7 @@ export default function App() {
           <Routes location={loc} key={loc.pathname}>
             <Route path="/" element={<Page><Home /></Page>} />
             <Route path="/event/:id" element={<Page><EventDetail /></Page>} />
+            <Route path="/attend" element={<Page><AttendeeRegister /></Page>} />
             <Route path="/admin" element={<Page><AdminDashboard /></Page>} />
             <Route path="*" element={<Page><NotFound /></Page>} />
           </Routes>
