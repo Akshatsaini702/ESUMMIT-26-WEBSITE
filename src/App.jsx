@@ -10,6 +10,7 @@ import Home from './pages/Home'
 import EventDetail from './pages/EventDetail'
 import AdminDashboard from './pages/AdminDashboard'
 import AttendeeRegister from './pages/AttendeeRegister'
+import MyRegistrations from './pages/MyRegistrations'
 import NotFound from './pages/NotFound'
 
 const Page = ({ children }) => (
@@ -83,6 +84,7 @@ export default function App() {
             <Route path="/" element={<Page><Home /></Page>} />
             <Route path="/event/:id" element={<Page><EventDetail /></Page>} />
             <Route path="/attend" element={<Page><AttendeeRegister /></Page>} />
+            <Route path="/me" element={<Page><MyRegistrations /></Page>} />
             <Route path="/admin" element={<Page><AdminDashboard /></Page>} />
             <Route path="*" element={<Page><NotFound /></Page>} />
           </Routes>

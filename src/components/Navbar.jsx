@@ -115,6 +115,9 @@ export default function Navbar() {
             >
               Brochure
             </button>
+            {configured && user && (
+              <Link to="/me" className="text-sm font-semibold text-white/80 hover:text-white transition-colors">My Registrations</Link>
+            )}
             {isAdmin && (
               <Link to="/admin" className="text-sm font-semibold grad-text">Admin</Link>
             )}
@@ -174,6 +177,9 @@ export default function Navbar() {
             ))}
             <button onClick={() => { setOpen(false); nav('/attend') }} className="text-left px-4 py-3 rounded-xl text-white/80 hover:bg-white/5">Attend (no sign-in)</button>
             <button onClick={getBrochure} className="text-left px-4 py-3 rounded-xl font-semibold grad-text">Brochure</button>
+            {configured && user && (
+              <button onClick={() => { setOpen(false); nav('/me') }} className="text-left px-4 py-3 rounded-xl font-semibold text-white/85 hover:bg-white/5">My Registrations</button>
+            )}
             {isAdmin && (
               <button onClick={() => { setOpen(false); nav('/admin') }} className="text-left px-4 py-3 rounded-xl font-semibold grad-text">Admin</button>
             )}

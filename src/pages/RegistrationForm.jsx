@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { validateForm, submitRegistration } from '../lib/registration'
 import { useAuth } from '../lib/auth'
@@ -174,12 +175,17 @@ export default function RegistrationForm({ event }) {
               <span className="grad-text font-semibold">{event.title}</span> is noted. Details and venue
               will be announced soon.
             </p>
-            <button
-              onClick={() => { setForm(buildEmpty()); setStatus('idle') }}
-              className="mt-6 rounded-xl px-6 py-3 glass hover:bg-white/10 transition-colors text-sm font-semibold"
-            >
-              Register another {event.form?.some((f) => f.name === 'teamName') ? 'team' : 'participant'}
-            </button>
+            <div className="mt-6 flex flex-wrap gap-3 justify-center">
+              <button
+                onClick={() => { setForm(buildEmpty()); setStatus('idle') }}
+                className="rounded-xl px-6 py-3 glass hover:bg-white/10 transition-colors text-sm font-semibold"
+              >
+                Register another {event.form?.some((f) => f.name === 'teamName') ? 'team' : 'participant'}
+              </button>
+              <Link to="/me" className="btn-grad rounded-xl px-6 py-3 text-sm font-semibold text-white">
+                View my registrations
+              </Link>
+            </div>
           </motion.div>
         ) : (
           <motion.form key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onSubmit={onSubmit} className="relative" noValidate>
