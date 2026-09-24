@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import jsPDF from 'jspdf'
@@ -30,9 +30,11 @@ export default function AdminDashboard() {
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
+  // Load both tables, newest first. `showSpinner` only on the first load so the
+  // background auto-refresh never flashes the "Loading…" state.
+  const load = useCallback((showSpinner) => {
     if (!supabase || !isAdmin) return
-    setFetching(true)
+    if (showSpinner) setFetching(true)
     Promise.all([
       supabase.from('registrations').select('*').order('created_at', { ascending: false }),
       supabase.from('attendees').select('*').order('created_at', { ascending: false }),
@@ -42,9 +44,17 @@ export default function AdminDashboard() {
       // Attendee table may not exist until the new SQL is run — don't hard-fail.
       if (atts.error) console.warn('Attendees fetch:', atts.error.message)
       else setAttendees(atts.data || [])
-      setFetching(false)
+      if (showSpinner) setFetching(false)
     })
   }, [isAdmin])
+
+  useEffect(() => {
+    load(true)
+    if (!supabase || !isAdmin) return
+    // Auto-refresh so new registrations appear at the top without a manual reload.
+    const t = setInterval(() => { if (!document.hidden) load(false) }, 12000)
+    return () => clearInterval(t)
+  }, [isAdmin, load])
 
   const isAttendeeView = selected === 'ATTENDEES'
   const countFor = (id) => records.filter((r) => r.event_id === id).length
@@ -168,6 +178,10 @@ export default function AdminDashboard() {
                   <button onClick={exportPDF} disabled={!visible.length} className="rounded-xl px-5 py-2.5 text-sm font-semibold glass hover:bg-white/10 disabled:opacity-50">Download PDF</button>
                 </>
               )}
+              <button onClick={() => load(true)} className="rounded-xl px-4 py-2.5 text-sm font-semibold glass hover:bg-white/10 flex items-center gap-1.5" title="Refresh registrations">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" className={fetching ? 'animate-spin' : ''}><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6" /></svg>
+                Refresh
+              </button>
               <button onClick={signOut} className="rounded-xl px-4 py-2.5 text-sm text-white/70 hover:text-white">Sign out</button>
             </div>
           </div>

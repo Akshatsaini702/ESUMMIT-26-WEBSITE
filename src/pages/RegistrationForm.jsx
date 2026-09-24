@@ -172,7 +172,7 @@ export default function RegistrationForm({ event }) {
             <p className="text-white/60 mt-2 max-w-md mx-auto">
               Thanks, <span className="text-white font-semibold">{greetName}</span>. Your spot for{' '}
               <span className="grad-text font-semibold">{event.title}</span> is noted. Details and venue
-              will be announced soon — keep an eye on your email.
+              will be announced soon.
             </p>
             <button
               onClick={() => { setForm(buildEmpty()); setStatus('idle') }}
