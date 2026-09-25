@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
+import PitchingCountdown from './components/PitchingCountdown'
 import NeonBackground from './components/NeonBackground'
 import FloatingShapes from './components/FloatingShapes'
 import IntroGate from './components/IntroGate'
@@ -77,6 +78,7 @@ export default function App() {
       </AnimatePresence>
 
       <Navbar />
+      {!booting && <PitchingCountdown />}
 
       <main>
         <AnimatePresence mode="wait">
