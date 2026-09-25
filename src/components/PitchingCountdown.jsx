@@ -43,7 +43,7 @@ export default function PitchingCountdown() {
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4, duration: 0.5 }}
-      className="fixed z-40 top-[76px] sm:top-[92px] right-2.5 sm:right-4 w-[196px] sm:w-[236px] rounded-2xl overflow-hidden border shadow-lg"
+      className="fixed z-40 top-[100px] sm:top-[116px] right-2.5 sm:right-4 w-[196px] sm:w-[236px] rounded-2xl overflow-hidden border shadow-lg"
       style={{
         borderColor: 'rgba(255,47,164,0.45)',
         background: 'linear-gradient(150deg, rgba(20,10,24,0.92), rgba(30,12,30,0.92))',
