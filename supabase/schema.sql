@@ -87,5 +87,31 @@ create policy "admin deletes attendees"
   to authenticated
   using ( (auth.jwt() ->> 'email') in ('pritikalra44@gmail.com', 'akshatsaini702@gmail.com') );
 
--- 4) Google login is enabled from the dashboard, not here:
+-- 4) Per-event registration open/closed switch ---------------------------------
+-- Admins flip these from the dashboard; everyone can read them so the public
+-- registration form knows whether to accept entries.
+create table if not exists public.event_settings (
+  event_id   text primary key,
+  closed     boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.event_settings enable row level security;
+
+-- Anyone may read the open/closed state (needed by the public form).
+drop policy if exists "anyone reads event settings" on public.event_settings;
+create policy "anyone reads event settings"
+  on public.event_settings for select
+  to anon, authenticated
+  using ( true );
+
+-- Only admins may open/close registrations.
+drop policy if exists "admin writes event settings" on public.event_settings;
+create policy "admin writes event settings"
+  on public.event_settings for all
+  to authenticated
+  using ( (auth.jwt() ->> 'email') in ('pritikalra44@gmail.com', 'akshatsaini702@gmail.com') )
+  with check ( (auth.jwt() ->> 'email') in ('pritikalra44@gmail.com', 'akshatsaini702@gmail.com') );
+
+-- 5) Google login is enabled from the dashboard, not here:
 --    Authentication ▸ Providers ▸ Google  (see the setup checklist).

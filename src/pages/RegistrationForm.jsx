@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { validateForm, submitRegistration } from '../lib/registration'
+import { validateForm, submitRegistration, isEventClosed } from '../lib/registration'
 import { useAuth } from '../lib/auth'
 import GoogleButton from '../components/GoogleButton'
 
@@ -24,6 +24,14 @@ export default function RegistrationForm({ event }) {
   const [form, setForm] = useState(buildEmpty)
   const [errors, setErrors] = useState({})
   const [status, setStatus] = useState('idle') // idle | submitting | done | error
+  // Admin can close this event's registration from the dashboard.
+  const [closed, setClosed] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    isEventClosed(event.id).then((c) => { if (alive) setClosed(c) })
+    return () => { alive = false }
+  }, [event.id])
 
   // When the backend is live, require Google sign-in before registering.
   const mustSignIn = configured && !user
@@ -50,6 +58,11 @@ export default function RegistrationForm({ event }) {
 
   const onSubmit = async (e) => {
     e.preventDefault()
+    // Re-check in case the admin closed registration while this form was open.
+    if (await isEventClosed(event.id)) {
+      setClosed(true)
+      return
+    }
     const errs = validateForm(allFields, form)
     if (Object.keys(errs).length) {
       setErrors(errs)
@@ -136,7 +149,27 @@ export default function RegistrationForm({ event }) {
       <div className="absolute -top-20 -right-20 w-52 h-52 rounded-full blur-3xl opacity-30" style={{ background: event.accent }} />
 
       <AnimatePresence mode="wait">
-        {mustSignIn ? (
+        {closed && status !== 'done' ? (
+          <motion.div key="closed" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="relative text-center py-6">
+            <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.06)' }}>
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-red-300">
+                <rect x="5" y="11" width="14" height="9" rx="2" />
+                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+              </svg>
+            </div>
+            <h3 className="font-display font-bold text-2xl">Registrations closed</h3>
+            <p className="text-white/60 mt-2 max-w-sm mx-auto text-sm">
+              Registration for <span className="grad-text font-semibold">{event.title}</span> is now closed.
+              Thanks for the interest — see you at the summit.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3 justify-center">
+              <RulebookButton />
+              <Link to="/#events" className="rounded-xl px-6 py-2 glass hover:bg-white/10 transition-colors text-sm font-semibold inline-flex items-center">
+                Browse other events
+              </Link>
+            </div>
+          </motion.div>
+        ) : mustSignIn ? (
           <motion.div key="signin" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="relative text-center py-6">
             <div className="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.06)' }}>
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-white/80">

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { supabase } from '../lib/supabase'
+import { fetchEventClosedMap, setEventClosed } from '../lib/registration'
 import { useAuth } from '../lib/auth'
 import { events } from '../data/events'
 import Icon from '../components/Icon'
@@ -24,6 +25,8 @@ export default function AdminDashboard() {
   const { user, loading, configured, isAdmin, signInWithGoogle, signOut } = useAuth()
   const [records, setRecords] = useState([])
   const [attendees, setAttendees] = useState([])
+  const [closedMap, setClosedMap] = useState({}) // { eventId: true } when closed
+  const [togglingId, setTogglingId] = useState(null)
   const [fetching, setFetching] = useState(false)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState(null) // null = panels grid; event id | 'ALL' | 'ATTENDEES'
@@ -46,6 +49,8 @@ export default function AdminDashboard() {
       else setAttendees(atts.data || [])
       if (showSpinner) setFetching(false)
     })
+    // Open/closed switches (best-effort — table may not exist until SQL is run).
+    fetchEventClosedMap().then(setClosedMap)
   }, [isAdmin])
 
   useEffect(() => {
@@ -88,6 +93,22 @@ export default function AdminDashboard() {
   const columns = useMemo(() => columnsOf(visible.map((v) => v.display)), [visible])
 
   // ---- Delete actions (admin only; RLS also enforces this server-side) ----
+  // ---- Open / close an event's registration ----
+  const toggleRegistration = async (eventId, eventTitle) => {
+    const nowClosed = !closedMap[eventId]
+    const verb = nowClosed ? 'CLOSE' : 'REOPEN'
+    if (!window.confirm(`${verb} registrations for ${eventTitle}?`)) return
+    setTogglingId(eventId)
+    try {
+      await setEventClosed(eventId, nowClosed)
+      setClosedMap((m) => ({ ...m, [eventId]: nowClosed }))
+    } catch (err) {
+      alert('Could not update registration status: ' + err.message)
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
   const TABLE = isAttendeeView ? 'attendees' : 'registrations'
   const setRowsAfterDelete = (idset) =>
     isAttendeeView
@@ -194,13 +215,16 @@ export default function AdminDashboard() {
               {fetching && <p className="text-white/50 mb-4">Loading registrations…</p>}
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {COMPETITIONS.map((e, i) => (
-                  <motion.button
+                  <motion.div
                     key={e.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => { setSelected(e.id); setQuery('') }}
-                    className="group text-left rounded-2xl glass brand-border p-6 relative overflow-hidden hover:-translate-y-1 transition-transform"
+                    onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); setSelected(e.id); setQuery('') } }}
+                    className="group text-left rounded-2xl glass brand-border p-6 relative overflow-hidden hover:-translate-y-1 transition-transform cursor-pointer"
                   >
                     <div className="absolute -top-14 -right-14 w-36 h-36 rounded-full blur-3xl opacity-40 group-hover:opacity-70 transition-opacity" style={{ background: e.accent }} />
                     <div className="relative">
@@ -208,7 +232,12 @@ export default function AdminDashboard() {
                         <Icon name={e.icon} className="w-6 h-6" />
                       </div>
                       <h3 className="font-display font-bold text-lg leading-snug">{e.title}</h3>
-                      <p className="text-xs text-white/50 mt-0.5">{e.day} · {e.time}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-white/50">{e.day} · {e.time}</p>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${closedMap[e.id] ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                          {closedMap[e.id] ? 'Closed' : 'Open'}
+                        </span>
+                      </div>
                       <div className="mt-4 flex items-end justify-between">
                         <div>
                           <div className="font-display font-extrabold text-3xl grad-text">{countFor(e.id)}</div>
@@ -218,8 +247,19 @@ export default function AdminDashboard() {
                           View <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                         </span>
                       </div>
+                      <button
+                        onClick={(ev) => { ev.stopPropagation(); toggleRegistration(e.id, e.title) }}
+                        disabled={togglingId === e.id}
+                        className={`mt-4 w-full rounded-xl px-4 py-2 text-xs font-semibold border transition-colors disabled:opacity-50 ${
+                          closedMap[e.id]
+                            ? 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20'
+                            : 'text-red-300 border-red-500/40 bg-red-500/10 hover:bg-red-500/20'
+                        }`}
+                      >
+                        {togglingId === e.id ? 'Saving…' : closedMap[e.id] ? 'Reopen registrations' : 'Close registrations'}
+                      </button>
                     </div>
-                  </motion.button>
+                  </motion.div>
                 ))}
 
                 <motion.button
@@ -282,6 +322,19 @@ export default function AdminDashboard() {
                 </button>
                 <div className="glass rounded-xl px-4 py-2 text-sm"><span className="text-white/50">Showing</span> <span className="font-semibold">{visible.length}</span></div>
                 <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, email, college…" className="field !w-auto flex-1 min-w-[220px] py-2" />
+                {selectedEvent && (
+                  <button
+                    onClick={() => toggleRegistration(selectedEvent.id, selectedEvent.title)}
+                    disabled={togglingId === selectedEvent.id}
+                    className={`rounded-xl px-4 py-2 text-sm font-semibold border transition-colors disabled:opacity-50 ${
+                      closedMap[selectedEvent.id]
+                        ? 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20'
+                        : 'text-red-300 border-red-500/40 bg-red-500/10 hover:bg-red-500/20'
+                    }`}
+                  >
+                    {togglingId === selectedEvent.id ? 'Saving…' : closedMap[selectedEvent.id] ? 'Reopen registrations' : 'Close registrations'}
+                  </button>
+                )}
                 <button
                   onClick={deleteAllShown}
                   disabled={!visible.length || busy}

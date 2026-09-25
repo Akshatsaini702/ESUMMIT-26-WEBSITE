@@ -84,6 +84,55 @@ export async function submitRegistration(event, fields, values, user) {
   return { ok: true, simulated: false }
 }
 
+// ---- Per-event registration open/closed switch ----
+// Reads are best-effort: if the table doesn't exist yet (SQL not run) or the
+// request fails, we fall back to "open" so registration never breaks.
+
+// Whether a single event's registration is closed.
+export async function isEventClosed(eventId) {
+  if (!supabase) return false
+  try {
+    const { data, error } = await supabase
+      .from('event_settings')
+      .select('closed')
+      .eq('event_id', eventId)
+      .maybeSingle()
+    if (error) {
+      console.warn('event_settings read:', error.message)
+      return false
+    }
+    return !!data?.closed
+  } catch (err) {
+    console.warn('event_settings read:', err)
+    return false
+  }
+}
+
+// { [eventId]: closed } for every event that has a saved setting.
+export async function fetchEventClosedMap() {
+  if (!supabase) return {}
+  try {
+    const { data, error } = await supabase.from('event_settings').select('event_id, closed')
+    if (error) {
+      console.warn('event_settings read:', error.message)
+      return {}
+    }
+    return Object.fromEntries((data || []).map((r) => [r.event_id, !!r.closed]))
+  } catch (err) {
+    console.warn('event_settings read:', err)
+    return {}
+  }
+}
+
+// Admin-only (enforced by RLS): open or close an event's registration.
+export async function setEventClosed(eventId, closed) {
+  if (!supabase) throw new Error('Backend not configured')
+  const { error } = await supabase
+    .from('event_settings')
+    .upsert({ event_id: eventId, closed, updated_at: new Date().toISOString() }, { onConflict: 'event_id' })
+  if (error) throw error
+}
+
 // Submits an attendee-only registration (no sign-in). Writes to the separate
 // `attendees` table. Falls back to a simulated success when the backend isn't set.
 export async function submitAttendee(fields, values) {

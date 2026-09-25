@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
 // Registration deadline for the Pitching Competition:
-// 26 Sep 2026, 12:00 PM IST  ==  06:30 UTC (IST = UTC+5:30).
+// 27 Sep 2026, 3:00 PM IST  ==  09:30 UTC (IST = UTC+5:30).
 // Fixed to an absolute instant so it counts down the same for every viewer,
 // regardless of their device time zone.
-const DEADLINE = Date.UTC(2026, 8, 26, 6, 30, 0)
+const DEADLINE = Date.UTC(2026, 8, 27, 9, 30, 0)
 
 function remaining() {
   const diff = DEADLINE - Date.now()
@@ -75,7 +75,7 @@ export default function PitchingCountdown() {
               <Unit value={t.s} label="Sec" />
             </div>
             <p className="text-[9px] sm:text-[10px] text-white/50 mt-1.5 text-center leading-snug">
-              Closes 26 Sep 2026 · 12:00 PM IST
+              Closes 27 Sep 2026 · 3:00 PM IST
             </p>
           </>
         )}
